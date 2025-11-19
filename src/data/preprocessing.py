@@ -188,7 +188,7 @@ def select_features(
     print(f"[FEATURES] Nombre de features utilisées : {len(feature_columns)}")
 
     X = df[feature_columns]
-    y = df[target_column]
+    y = df[target_column].astype("category").cat.codes
 
     return X, y
 

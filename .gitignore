@@ -1,7 +1,13 @@
+# Virtual env
 venv/
-__pycache__/
-*.pyc
-.data/
-data/raw/
-.ipynb_checkpoints/
-.DS_Store
+
+# Données prétraitées lourdes
+data/processed/*.joblib
+data/processed/*.npy
+
+# Modèles RL
+models/
+*.pt
+
+# Rapports locaux
+reports/

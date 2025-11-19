@@ -81,6 +81,45 @@ python -m src.data.preprocessing
 ```
 Cela génère automatiquement les fichiers normalisés dans `data/processed/`.
 
+### 🔷 Phase 3 — Baseline supervisée
+
+Pour entraîner la baseline supervisée (RandomForest) :
+
+```bash
+python -m src.agents.baseline_supervised
+```
+
+Ce script génère automatiquement :
+
+- `reports/baseline_report.md` — rapport lisible en Markdown
+- `reports/confusion_matrix.png` — heatmap de la matrice de confusion
+- `data/processed/baseline_random_forest.joblib` — modèle sauvegardé
+
+L’environnement RL utilisé par les futurs agents (Q-Learning et PPO) est défini dans :
+
+```
+src/envs/ddos_env.py
+```
+
+---
+
+### 🔷 Phase 4 — Q-Learning (DQN)
+
+Entraîner l’agent DQN (version Deep Q-Learning) sur l’environnement DDoS :
+
+Exemple d’entraînement :
+```bash
+python main_train_dqn.py --episodes 200 --device cpu --split train --out-dir models/dqn
+```
+
+Les modèles et courbes d’entraînement sont sauvegardés dans :
+
+```
+models/dqn/
+```
+
+*Note : PPO sera ajouté en Phase 5. Les commandes PPO dans la section “Utilisation” seront activées une fois cette phase complétée.*
+
 ---
 
 ## 🔷 6. Utilisation

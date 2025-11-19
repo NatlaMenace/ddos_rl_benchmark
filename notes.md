@@ -133,4 +133,112 @@ data/processed/
 python -m src.data.preprocessing
 ```
 
--------------------------------------
+## 🟦 Phase 3 — Formulation RL & baseline supervisée
+
+### 🎯 Objectifs
+- Définir la formulation RL du problème de détection DDoS (MDP).
+- Implémenter un environnement Gymnasium basé sur les données prétraitées.
+- Mettre en place une baseline supervisée pour comparer les performances avec le RL.
+
+### 🧠 Formulation RL (MDP)
+
+- **États (S)** : vecteur de 8 features normalisées issu de `X_train` / `X_test`.
+- **Actions (A)** :  
+  - 0 = trafic normal  
+  - 1 = attaque DDoS
+
+- **Récompense (R)** :  
+  - +1 si l’action correspond au label réel  
+  - −2 pour un faux négatif (attaque non détectée)  
+  - −1 pour un faux positif (trafic normal classé comme attaque)
+
+- **Transitions** : l’agent parcourt des exemples du dataset, dans un ordre aléatoire à chaque épisode.
+
+### 🧩 Environnement Gym — `DDoSDatasetEnv`
+
+Implémenté dans :
+```text
+src/envs/ddos_env.py
+```
+
+### 📊 Résultats de la baseline supervisée
+
+L'exécution de la baseline RandomForest produit automatiquement plusieurs fichiers utiles pour l’analyse :
+
+- `reports/baseline_report.md` — Rapport Markdown complet (rapport de classification + matrice de confusion en tableau).
+- `reports/confusion_matrix.png` — Visualisation graphique de la matrice de confusion.
+- `data/processed/baseline_random_forest.joblib` — Modèle entraîné sauvegardé pour référence.
+
+Commande exécutée :
+```
+```bash
+python -m src.agents.baseline_supervised
+```
+
+Ces éléments serviront de point de comparaison lors de la Phase 6 (expérimentations RL).
+
+## 🟦 Phase 4 — Implémentation Q-Learning (DQN)
+
+### 🎯 Objectifs
+- Implémenter une version Deep Q-Learning (DQN) adaptée aux états continus.
+- Connecter l’agent DQN à l’environnement `DDoSDatasetEnv`.
+- Générer un premier ensemble de courbes de récompense pour comparaison ultérieure avec PPO.
+
+### 🧩 Agent DQN
+
+L’agent DQN est implémenté dans :
+```
+src/agents/dqn_agent.py
+```
+Caractéristiques :
+- Réseau Q approximé par un MLP (2 couches cachées, ReLU).
+- Replay buffer (100 000 transitions).
+- Stratégie ε-greedy avec décroissance linéaire.
+- Réseau cible mis à jour périodiquement.
+
+### ▶️ Entraînement DQN
+
+Le script d’entraînement est :
+```
+main_train_dqn.py
+```
+
+Commande d’exemple :
+```
+```bash
+python main_train_dqn.py --episodes 200 --device cpu
+```
+
+Les sorties sont sauvegardées dans :
+```
+models/dqn/
+    dqn_cicddos.pt
+    episode_rewards.npy
+    losses.npy
+```
+
+### 📈 Interprétation des premiers résultats DQN
+
+Le reward moyen passe d’environ **-760** au début de l’entraînement à environ **-560** sur les épisodes les plus récents.  
+Cette amélioration montre que l’agent apprend progressivement à réduire ses erreurs de classification, même si un plateau apparaît après une centaine d’épisodes.  
+Ce comportement est cohérent avec :
+
+- une fonction de récompense fortement négative (FN = -2, FP = -1),  
+- un dataset très volumineux (430k flux),  
+- un environnement non-Markovien (chaque flux est indépendant),  
+- une phase d'exploration ε-greedy encore élevée au début.
+
+Ces résultats constituent la baseline RL initiale et seront comparés aux performances obtenues par PPO en Phase 6.
+
+### 📁 Sorties générées par le DQN
+
+Les fichiers produits par l'entraînement DQN sont :
+
+```
+models/dqn/
+    dqn_cicddos.pt
+    episode_rewards.npy
+    losses.npy
+```
+
+Ils seront utilisés lors de l’analyse comparative finale (Phase 6).
