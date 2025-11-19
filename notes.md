@@ -242,3 +242,92 @@ models/dqn/
 ```
 
 Ils seront utilisés lors de l’analyse comparative finale (Phase 6).
+
+## 🟦 Phase 5 — PPO (Policy Gradient)
+
+### 🎯 Objectifs
+- Implémenter un agent PPO basé sur les policy gradients.
+- Réutiliser le même environnement `DDoSDatasetEnv` que pour DQN pour permettre une comparaison directe.
+- Générer des métriques de classification et des courbes d’apprentissage comparables à celles de DQN.
+
+### 🧠 Rappel théorique sur PPO
+
+PPO (Proximal Policy Optimization) est un algorithme d’apprentissage par renforcement basé sur les policy gradients.  
+L’idée principale est de mettre à jour les paramètres de la politique \(\pi_\theta(a \mid s)\) en maximisant un objectif de type gradient de politique, tout en **limitant la taille des mises à jour** pour éviter les instabilités.
+
+L’objectif PPO utilise un ratio entre la nouvelle et l’ancienne politique :
+
+\[
+r_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{old}}(a_t \mid s_t)}
+\]
+
+et maximise une fonction **“clippée”** :
+
+\[
+L^{CLIP}(\theta) = \mathbb{E}_t \left[ \min\left( r_t(\theta) A_t, \text{clip}(r_t(\theta), 1 - \epsilon, 1 + \epsilon) A_t \right) \right]
+\]
+
+où \(A_t\) est l’avantage (estimé typiquement via GAE) et \(\epsilon\) un hyperparamètre de clip (ex. 0.2).  
+Cette forme “clippée” empêche les mises à jour trop agressives qui dégraderaient brutalement la politique.
+
+Dans ce projet :
+- la politique est un MLP (MlpPolicy, Stable-Baselines3),  
+- l’algorithme utilise PPO avec GAE, objectif clippé, et optimisation par mini-batchs.
+
+### ⚙️ Implémentation PPO
+
+L’agent PPO est implémenté avec **Stable-Baselines3** :
+
+- Fichier de configuration / helper :
+  - `src/agents/ppo_agent.py` (classe `PPOConfig` et fonction `make_ppo_model(...)`).
+- Script d’entraînement :
+  - `main_train_ppo.py`
+
+L’entraînement est lancé avec une commande du type :
+```bash
+python main_train_ppo.py --total-timesteps 500000 --device cpu --max-steps 1000
+```
+
+Caractéristiques :
+- environnement : `DDoSDatasetEnv(split="train")` pour l’entraînement, `split="test"` pour l’évaluation,
+- politique : MlpPolicy (SB3),
+- hyperparamètres (exemple) : learning_rate = 3e-4, gamma = 0.99, clip_range = 0.2, n_steps = 2048, n_epochs = 10.
+
+### 📊 Résultats expérimentaux PPO (première passe)
+
+Évaluation sur le set de test (10 000 échantillons, labels multi-classes) :
+
+- Accuracy globale : **22,40 %**
+- Macro F1 : **0,023**
+- Weighted F1 : **0,083**
+
+Le rapport de classification montre que :
+- la classe `0` (majoritaire) atteint une précision ≈ 0,23 et un recall ≈ 0,999,
+- toutes les autres classes (1 à 15) ont une précision, un recall et un F1-score de **0,0**.
+
+La matrice de confusion indique que :
+- presque toutes les prédictions sont faites en classe `0`,
+- les classes minoritaires ne sont quasiment jamais prédites.
+
+Interprétation :
+- PPO, dans cette configuration de récompense et avec des labels multi-classes fortement déséquilibrés, **collabe vers une politique triviale** : prédire systématiquement (ou quasi systématiquement) la classe majoritaire.
+- L’accuracy ~22 % correspond à peu près à la proportion de la classe `0` dans le test, ce qui montre que l’agent n’exploite pas l’information fine des autres classes.
+- Pour la détection DDoS multi-attaques, ce comportement est insuffisant : le modèle ne détecte pas les types d’attaque spécifiques (classes 1 à 15).
+
+Ces résultats motivent :
+- soit une reformulation du problème en **binaire** (benign vs attaque),
+- soit un rééquilibrage de la récompense (pondération plus forte des classes d’attaque),
+- soit une combinaison RL + supervision pour améliorer la sensibilité aux classes minoritaires.
+
+### 📁 Sorties générées par PPO
+
+L’entraînement PPO produit les fichiers suivants :
+
+```
+models/ppo/
+    ppo_cicddos.zip        # modèle PPO sauvegardé
+    episode_rewards.npy    # rewards par épisode (évaluation)
+reports/
+    ppo_report.md          # rapport de classification (test)
+    ppo_confusion_matrix.png  # matrice de confusion PPO
+```

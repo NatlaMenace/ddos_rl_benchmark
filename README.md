@@ -122,6 +122,28 @@ models/dqn/
 
 ---
 
+### 🔷 Phase 5 — PPO (Policy Gradient)
+
+Entraîner l’agent PPO (Stable-Baselines3) sur le même environnement DDoS :
+
+```bash
+python main_train_ppo.py --total-timesteps 500000 --device cpu --max-steps 1000
+```
+
+Les modèles et rapports générés sont sauvegardés dans :
+
+```
+models/ppo/
+reports/
+```
+
+- `models/ppo/ppo_cicddos.zip` : modèle PPO entraîné
+- `reports/ppo_report.md` : rapport de classification sur le test
+- `reports/ppo_confusion_matrix.png` : matrice de confusion PPO
+```
+
+---
+
 ## 🔷 6. Utilisation
 
 ⚠️ *Cette section sera mise à jour lorsque les scripts d’entraînement
