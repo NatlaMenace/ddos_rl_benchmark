@@ -1,13 +1,35 @@
 # Virtual env
 venv/
 
+# Caches Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Config locaux
+.env
+.env.*
+*.env
+.DS_Store
+
+# Journaux et temporaires
+*.log
+*.tmp
+
+# Notebooks
+.ipynb_checkpoints/
+
 # Données prétraitées lourdes
 data/processed/*.joblib
 data/processed/*.npy
+data/raw/
 
 # Modèles RL
 models/
 *.pt
+
+# Sorties d'entraînement (tensorboard, etc.)
+runs/
 
 # Rapports locaux
 reports/
